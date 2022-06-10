@@ -9,12 +9,6 @@
 # @params: scale - indicates whether the matrix is scaled (TRUE by default)
 # @params: gs - list of gene sets positively expressed in the cell type 
 # @params: gs2 - list of gene sets that should not be expressed in the cell type (NULL if not applicable)
-mus.to.hsa.id <- read.csv('mus_hsa_id.csv',row.names = 1)
-Hsa_2_Mus_id <- function(x, available.id){
-  tmp.id = mus.to.hsa.id$geneID.mus[which(mus.to.hsa.id$geneID.hsa %in% x)]
-  tmp.id.filtered = tmp.id[which(tmp.id %in% available.id)]
-  return(tmp.id.filtered)
-}
 
 filter_genes = function(x, exp.var, p = .9){
   high.var.genes = exp.var[which(exp.var > quantile(exp.var, p))]
