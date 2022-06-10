@@ -1,0 +1,82 @@
+---
+title: "Detect DEGs in snRNAseq data"
+author: "Bitao Qiu"
+date: "10/06/2022"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= F, warning= F)
+```
+
+```{r}
+library(Seurat)
+library(tidyverse)
+source('R/detect_DEGs.R')
+```
+
+Load Seurat object, expression data should have been properly normalized:
+
+```{r load_data}
+load('data/test_object.Rdata')
+```
+
+Detect cell clusters and visualize the cell clusters:
+
+```{r Overview}
+# test_data <- FindNeighbors(test_data, dims = 1:50)
+# test_data <- FindClusters(test_data, resolution = 0.8)
+DimPlot(test_data, group.by = c('treatment'), split.by = 'geno') & NoLegend()
+DimPlot(test_data, group.by = c('seurat_clusters'), split.by = 'geno') & NoLegend()
+```
+
+We choose and subset cell population "Agrp" to perform differential expression analysis:
+
+```{r Subset_cells}
+selected_cells = which(test_data$labels %in% 'Agrp' & test_data$time == '3')
+test_data.sub = subset(test_data, cells = selected_cells)
+test_data.sub_exp = data.frame(t(as.matrix(test_data.sub@assays$SCT@data)), test_data.sub@meta.data)
+```
+
+An example for running glm for a single gene:
+
+```{r A single gene example}
+# A typical GLM:
+run_glm(test_data.sub_exp$Stat3, test_data.sub@meta.data, model = '(exp) ~ ((treatment*geno))', mixed_model = F)
+# A mixed-effect model(GLMR):
+run_glm(test_data.sub_exp$Stat3, test_data.sub@meta.data, model = '(exp) ~ treatment*geno + (1|hash_id)', mixed_model = T)
+```
+
+Detect DEGs with a mixed-effect model in subset cells:
+
+```{r Detecting DEGs}
+# Typical GLM (For comparison):
+agrp_deg.glm = snRNA_DEGs(test_data.sub, fixed_effects = 'treatment*geno', mixed_model = F, deg_type = 'abs', n_cores = 50)
+
+# GLMR:
+agrp_deg.glmr = snRNA_DEGs(test_data.sub, fixed_effects = 'treatment*geno',random_effect = '(1|hash_id)', deg_type = 'abs', n_cores = 50)
+```
+
+Visualization by plotting the top candidate gene:
+
+```{r Plot_expression_P1}
+head(agrp_deg.glm[order(agrp_deg.glm$treatmentSal.genowt, decreasing = T),])
+
+head(agrp_deg.glmr[order(agrp_deg.glmr$treatmentSal.genowt, decreasing = T),])
+
+ggplot(test_data.sub_exp,aes(y = Epb41l4a, x = treatment, fill = hash_id)) +
+  geom_boxplot()+
+  facet_wrap(~geno)+
+  geom_jitter(position=position_dodge(0.75))+
+  theme_bw()+
+  theme(legend.position = 'none', 
+        axis.text.x = element_text(size = 20), 
+        strip.text.x = element_text(size = 20),
+        axis.title = element_text(size = 20))
+```
+
+Also by plotting the target gene's expression pattern in a UMAP:
+
+```{r Plot_expression_P2}
+FeaturePlot(test_data, features = 'Epb41l4a', split.by = 'geno') & NoLegend()
+```

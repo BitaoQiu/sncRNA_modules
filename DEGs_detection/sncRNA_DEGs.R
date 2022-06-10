@@ -1,7 +1,7 @@
 library(Seurat)
 library(tidyverse)
 source('R/detect_DEGs.R')
-# Load Seurat object; Expression data should have been probably normalized.
+# Load Seurat object; Expression data should have been properly normalized.
 load('data/test_object.Rdata')
 test_data <- FindNeighbors(test_data, dims = 1:50)
 test_data <- FindClusters(test_data, resolution = 0.8)

@@ -21,7 +21,7 @@ snRNA_DEGs = function(object, fixed_effects, random_effects = NA, mixed_model = 
   if (mixed_model) {
     deg_model = paste(fixed_effects, random_effects, sep = '+')
   } else {
-    deg_model = fix_effects
+    deg_model = fixed_effects
   }
   if (deg_type == 'rank') { 
     # Use rank test to ignore the magnitude of difference (might be useful to detect lowly expressed genes)
