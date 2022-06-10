@@ -1,5 +1,4 @@
 # Functions for cell type annotation.
-source('sctype_scoring.R')
 
 select_cutoff = function(x, q = 1, G = 2){
   km <- mclust::Mclust(data = x, G = 2:G, verbose = F)

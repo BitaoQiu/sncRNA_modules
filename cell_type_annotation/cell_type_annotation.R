@@ -1,6 +1,7 @@
 # Annotation with hierarchy marker database.
-source('find_markers.R')
-source('annotate_cells.R')
+source('R/find_markers.R')
+source('R/sctype_scoring.R')
+source('R/annotate_cells.R')
 library(future)
 library(styler)
 library(Matrix)
@@ -8,11 +9,11 @@ library(Seurat)
 library(tidyverse)
 
 # Load query data.
-load('test.data.B10_ref.based.Rdata') 
+load('data/test.data.B10_ref.based.Rdata') 
 # Load reference RNAseq data
-hypo.ref <- readRDS('ref.cam.hypo.rds') 
+hypo.ref <- readRDS('data/ref.cam.hypo.rds') 
 # Load markers, extracted by extracter_marker_hierarcy.R
-load('marker_db_cam_hypo.Rdata')
+load('data/marker_db_cam_hypo.Rdata')
 
 # Level 1 annotation ####
 

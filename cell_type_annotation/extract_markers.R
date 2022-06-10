@@ -5,11 +5,11 @@
 library(Matrix)
 library(Seurat)
 library(tidyverse)
-source('sctype_scoring.R')
-source('find_markers.R')
+source('R/sctype_scoring.R')
+source('R/find_markers.R')
 
 # Load ref data set, should have been normalized by sequencing depth.
-hypo.ref <- readRDS('ref.cam.hypo.rds') 
+hypo.ref <- readRDS('data/ref.cam.hypo.rds') 
 table(hypo.ref$taxonomy_lvl2, hypo.ref$cell_type_all_lvl2)
 
 # Step 1. Extract markers at the higher level.
@@ -37,4 +37,4 @@ for (i in names(table(hypo.ref$taxonomy_lvl2))) {
 
 # Combine lvl 1 and lvl2 marker db into a single list.
 marker_db_cam_hypo = list(lv1 = marker_db_lvl1, lv2 = marker_db_lvl2)
-save(marker_db_cam_hypo, file = 'marker_db_cam_hypo.Rdata')
+save(marker_db_cam_hypo, file = 'data/marker_db_cam_hypo.Rdata')
