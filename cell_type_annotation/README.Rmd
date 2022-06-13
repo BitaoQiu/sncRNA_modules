@@ -1,9 +1,15 @@
-Cell type annotation with marker genes
-================
-Bitao Qiu
-13/06/2022
+---
+title: "Cell type annotation with marker genes"
+author: "Bitao Qiu"
+date: "13/06/2022"
+output: github_document
+---
 
-``` r
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= F, warning= F, fig.width = 11)
+```
+
+````{r}
 source('R/find_markers.R')
 source('R/sctype_scoring.R')
 source('R/annotate_cells.R')
@@ -13,10 +19,8 @@ library(Matrix)
 library(Seurat)
 library(tidyverse)
 ```
-
 Load query data, reference data, and marker gene database:
-
-``` r
+```{r Load_data}
 # Load query data
 load('data/test.data.B10_ref.based.Rdata') 
 # Load reference RNAseq data
@@ -29,7 +33,7 @@ load('data/marker_db_cam_hypo.Rdata')
 
 Construct marker gene list:
 
-``` r
+```{r construct_marker_list}
 # Users can also provide their own marker gene list: list(cell_type: markers)
 # Select the top n DEGs (target cells vs. background) from each cell type as marker genes. 
 # For high level annotation, n within 100 and 200, for low level annotation, n = 30 - 50 should be fine.
@@ -39,28 +43,14 @@ marker_gene_lv1 = contruct_marker_list(marker_db_cam_hypo$lv1, top_n = top_n)
 
 Annotation:
 
-``` r
+```{r Annotation}
 test.data.B10.lv1 =  cell_annotation_ref_based(test.data.B10, marker_gene_lv1, target_cells = colnames(test.data.B10), label = 'sctype_label.lv1', filter = T)
-```
 
-    ## Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-    ## 
-    ## Number of nodes: 7684
-    ## Number of edges: 249317
-    ## 
-    ## Running Louvain algorithm...
-    ## Maximum modularity in 10 random starts: 0.9166
-    ## Number of communities: 29
-    ## Elapsed time: 0 seconds
-
-``` r
 # Visualization:
 # sctype_label.lv1.filtered are cell level annotations (cells with low scores are marked as "Unknown"); 
 # sctype_label.lv1.filtered.cluster are cluster level annotations.
 DimPlot(test.data.B10.lv1, group.by = c('sctype_label.lv1.filtered','sctype_label.lv1.filtered.cluster'),label = T) & NoLegend()
 ```
-
-![](README_files/figure-gfm/Annotation-1.png)<!-- -->
 
 ## Level 2 annotation
 
@@ -68,7 +58,7 @@ We use neuron cells as an example.
 
 Construct marker gene list (for neuron cell types):
 
-``` r
+```{r construct_marker_list_lvl2}
 # In contrast to level 1 annotation, we only select top 50 genes (sorted by W score) as marker genes, because the transcriptomics difference among (sub-)cell types might be small at level 2.
 top_n = 50
 marker_gene_lv2.neuron = contruct_marker_list(marker_db_cam_hypo$lv2$Neuron, top_n = top_n)
@@ -76,7 +66,7 @@ marker_gene_lv2.neuron = contruct_marker_list(marker_db_cam_hypo$lv2$Neuron, top
 
 Annotation:
 
-``` r
+```{r Annotation_lvl2}
 # We choose 50 PCs for cluster annotation.
 n_pc = 50
 # Subset neuron cells scRNAseq data:
@@ -84,19 +74,7 @@ neurone_cells = colnames(test.data.B10.lv1)[which(test.data.B10.lv1$sctype_label
 test.data.B10.neuron =  cell_annotation_ref_based(test.data.B10.lv1, marker_gene_lv2.neuron, n_pc = n_pc, 
                                         target_cells = neurone_cells,
                                         label = 'sctype_label.lv2')
-```
 
-    ## Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-    ## 
-    ## Number of nodes: 5385
-    ## Number of edges: 166042
-    ## 
-    ## Running Louvain algorithm...
-    ## Maximum modularity in 10 random starts: 0.9166
-    ## Number of communities: 34
-    ## Elapsed time: 0 seconds
-
-``` r
 # Visualization (lvl.2):
 # sctype_label.lv2.filtered.cluster are cluster level annotations, depended on cluster annotation (seurat_clusters).
 test.data.B10.neuron = RunPCA(test.data.B10.neuron)
@@ -105,13 +83,11 @@ test.data.B10.neuron = RunUMAP(test.data.B10.neuron, dims = c(1:n_pc))
 DimPlot(test.data.B10.neuron, group.by = c('sctype_label.lv2.filtered.cluster', 'seurat_clusters'),label = T) & NoLegend()
 ```
 
-![](README_files/figure-gfm/Annotation_lvl2-1.png)<!-- -->
-
 ## Comparison with Seurat annotation
 
 Prepare Seurat annotation:
 
-``` r
+```{r Seurat_annotation}
 # Anchor transfer
 hypo.ref.neuron = subset(hypo.ref, subset = `taxonomy_lvl2` == 'Neuron')
 hypo.ref.neuron = RunPCA(hypo.ref.neuron)
@@ -129,16 +105,12 @@ test.data.B10.neuron = cluster_level_annotation(test.data.B10.neuron, sctype_lab
 
 Visual comparison:
 
-``` r
+```{r Seurat_comparison}
 # Left: Marker gene annotation; Right: Seurat annotation
 DimPlot(test.data.B10.neuron, group.by = c('sctype_label.lv2.filtered.cluster', 'predicted.id.cluster'),label = T) & NoLegend()
 ```
 
-![](README_files/figure-gfm/Seurat_comparison-1.png)<!-- -->
-
-``` r
+```{r plot_candidate_genes, fig.height= 9}
 # Plotting candidate genes:
 FeaturePlot(test.data.B10.neuron, features = c('Agrp','Sst','Nfix','Htr2c'))
 ```
-
-![](README_files/figure-gfm/plot_candidate_genes-1.png)<!-- -->
