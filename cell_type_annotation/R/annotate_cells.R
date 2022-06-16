@@ -24,18 +24,21 @@ filter_low_score = function(target_cell_type, es.data, q = 1, G = 3, lable_name 
   return(es.data.filtered)
 }
 
-cell_level_annotation = function(tmp_object, marker_db.list, exp.var = NA, assay = 'SCT', filter.var = F, label = 'sctype_label'){
-  es.max = sctype_score(scRNAseqData = tmp_object[[assay]]@scale.data, exp.var = exp.var, # Using scale normalized data
-                        filter.var = filter.var, p = .1, scaling = F, gs = marker_db.list, gene_names_to_uppercase = F) 
+cell_level_annotation = function(tmp_object, marker_db.list, exp.var = NA, assay = 'SCT', filter.var = F, filter = T, label = 'sctype_label', scaling = F){
+  es.max = sctype_score(scRNAseqData = tmp_object[[assay]]@data, 
+                        exp.var = exp.var, filter.var = filter.var, p = .1, 
+                        scaling = scaling, gs = marker_db.list, gene_names_to_uppercase = F) 
   es.max.data = data.frame(t(es.max))
   es.max.data$sctype_label = apply(es.max.data,1,function(x) names(x)[which.max(x)])
-  # Setting cells with low annotation score to unknown.
-  es.max.data.filtered = es.max.data
-  for (x in names(table(es.max.data$sctype_label))) {
-    es.max.data.filtered = filter_low_score(x, es.max.data.filtered, q = 1, G = 3)
-  }
   tmp_object@meta.data[[label]] = es.max.data$sctype_label
-  tmp_object@meta.data[[paste(label,'filtered',sep = '.')]] = es.max.data.filtered$sctype_label
+  if (filter){
+    # Setting cells with low annotation score to unknown.
+    es.max.data.filtered = es.max.data
+    for (x in names(table(es.max.data$sctype_label))) {
+      es.max.data.filtered = filter_low_score(x, es.max.data.filtered, q = 1, G = 2)
+      tmp_object@meta.data[[paste(label,'filtered',sep = '.')]] = es.max.data.filtered$sctype_label
+    }
+  }
   return(tmp_object)
 }
 
@@ -60,23 +63,17 @@ cluster_level_annotation = function(tmp_object, sctype_label = 'sctype_label.fil
   return(tmp_object)
 }
 
-cell_annotation_ref_based = function(seurat_object, marker_db.list, target_cells, assay = 'SCT', 
-                                     filter.var = F, filter = T, resolution = 1, n_pc = 15, label = 'sctype_label') {
-  tmp_object = subset(seurat_object, cells = target_cells)
-  # Define cell clusters ####
-  tmp_object <- FindNeighbors(tmp_object, dims = 1:n_pc, verbose = T)
-  tmp_object <- FindClusters(tmp_object, resolution = resolution) 
-  # For high level annotation, a low resolution + low PC is preferable.
-  # For low level annotation, a higher resolution might be better
+cell_annotation_ref_based = function(seurat_object, marker_db.list,assay = 'SCT', scaling = F, 
+                                     filter.var = F, filter = T, label = 'sctype_label') {
   if (filter.var) {
-    sampled_cells = unlist(tapply(colnames(tmp_object), INDEX = tmp_object$seurat_clusters, sample, size = 100, replace = T))
-    exp.var = apply(tmp_object[[assay]]@data[,sampled_cells],1, var)
+    sampled_cells = unlist(tapply(colnames(seurat_object), INDEX = seurat_object$seurat_clusters, sample, size = 100, replace = T))
+    exp.var = apply(seurat_object[[assay]]@data[,sampled_cells],1, var)
   } else {exp.var = NA}
-  tmp_object = cell_level_annotation(tmp_object, marker_db.list, filter.var = filter.var, exp.var = exp.var, assay = assay, label = label)
-  if (filter) {sctype_label = paste(label,'filtered', sep = '.')
-  } else {sctype_label = label
+  seurat_object = cell_level_annotation(seurat_object, marker_db.list, filter.var = filter.var, filter = filter, scaling = scaling, exp.var = exp.var, assay = assay, label = label)
+  seurat_object = cluster_level_annotation(seurat_object, sctype_label = label) # Cluster level annotation
+  if (filter) {
+    seurat_object = cluster_level_annotation(seurat_object, sctype_label = paste(label, 'filtered',sep = '.'))
   }
-  tmp_object = cluster_level_annotation(tmp_object, sctype_label = sctype_label)
-  return(tmp_object)
+  return(seurat_object)
 }
 

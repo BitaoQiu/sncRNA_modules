@@ -28,12 +28,14 @@ snRNA_DEGs = function(object, fixed_effects, random_effects = NA, mixed_model = 
     tmp_model = as.formula(paste0('rank(exp) ~ ',deg_model))
   } else { 
     tmp_model = as.formula(paste0('exp ~ ',deg_model ))
+    n_estimates = length(attr(terms(tmp_model),'term.labels'))
+    if (!mixed_model) {n_estimates = n_estimates + 1}
   }
   target_genes = rownames(object.exp)
   exp_diff = data.frame(foreach(x = target_genes, .combine = rbind) %dopar% {
     # If there is an error, it will return 0. 
     # Only retain one coefficient (usually t value is most informative).
-    tryCatch(run_glm(object.exp[x,], object@meta.data, tmp_model, mixed_model = mixed_model, family = family)[,coefficient], error = function(e) {return(0)})
+    tryCatch(run_glm(object.exp[x,], object@meta.data, tmp_model, mixed_model = mixed_model, family = family)[,coefficient], error = function(e) {return(rep(NA,n_estimates))})
   })
   rownames(exp_diff) = target_genes
   return(exp_diff)
