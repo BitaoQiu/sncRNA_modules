@@ -13,6 +13,7 @@ rank_markers = function(exp_data, cell_anotations, target_cell_type, test_fun = 
   } else {
     stratified_background = sample(x = names(background_cells), size = sample_size, replace = T)
   }
+  target_cells.downsampled = sample(x = target_cells, size = sample_size*2, replace = T)
   ranking.stat = apply(exp_data, 1, FUN = function(x) {
     test_fun(x[target_cells], x[stratified_background],alternative = 'g')$statistic})
   return(ranking.stat)
