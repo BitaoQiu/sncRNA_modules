@@ -221,25 +221,26 @@ snRNAeq data*.
 
 ### Note:
 
-1.  The choice of scale (*scale.data*) or not (*data*) in
+1.  The choice of scale (*scale.data*) or not (*data*) sncRNAseq data in
     *cell\_annotation\_ref\_based* can be important. If (1) there are
     lots of diversity among neurons (different regions) in your data set
     and (2) your markers are extracted from a single brain region (e.g.,
     the arcuate–median eminence complex (Arc-ME)), scaling the data will
-    introduce negative values for some of the neuron marker genes
-    outside of the Arc-ME. If you expect your sncRNA data has a similar
-    composition as the reference data set, using scale-data should be
-    better because it will take between-cell-type variation into
-    consideration (see (Note 2)).
+    introduce negative values for some of the neuron marker genes in
+    cells outside of the Arc-ME. However, if you expect your scRNA data
+    has a similar cell-type composition as the reference data set,
+    scaling the data can be better because it will take
+    between-cell-type variation into consideration (see *Note 2*).
 
 2.  The choice of marker genes can also be important: Some of the neuron
     marker genes can have a higher expression level in Ependymal cells
     than Ependymal cell marker genes. If we only choose 10 genes, these
-    Ependymal cells will be annotated as neurons.
+    Ependymal cells will be annotated as neurons. In general, for
+    high-level annotation, 200 - 500 markers yield the same result.
 
 3.  In the future, we should also take the within-cell-type expression
     ranking into consideration (if within-cell gene expression levels
-    are comparable). That will be exp<sub>neuron\_marker,neurons</sub>:
-    exp<sub>background\_genes, neurons</sub> &gt;&gt;
-    exp<sub>neuron\_marker,other\_cells</sub>:
-    exp<sub>background\_genes, other\_cells</sub>.
+    are comparable). That will be **Exp<sub>neuron marker,neurons</sub>
+    : Exp<sub>background genes, neurons</sub>** *v.s.* **Exp<sub>neuron
+    marker,other cells</sub> : Exp<sub>background genes, other
+    cells</sub>**.
