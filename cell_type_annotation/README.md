@@ -28,7 +28,8 @@ Load query data, reference data, and marker gene database:
 load('data/test.data.B10_ref.based.Rdata') 
 # Load reference RNAseq data
 hypo.ref <- readRDS('data/ref.cam.hypo.rds') 
-# Load markers (an hierarchy marker database), extracted by extracter_marker_hierarcy.R
+# Load markers (an hierarchy marker database), extracted by extract_marker.R
+# One can also extract markers with Seurat (extract_marker_seurat.R) and rank them by fold-changes.
 load('data/marker_db_cam_hypo.Rdata')
 ```
 
@@ -228,8 +229,8 @@ snRNAeq data*.
     introduce negative values for some of the neuron marker genes
     outside of the Arc-ME. If you expect your sncRNA data has a similar
     composition as the reference data set, using scale-data should be
-    better because it will take between-cell-type variaion into
-    consideration (see (b)).
+    better because it will take between-cell-type variation into
+    consideration (see (Note 2)).
 
 2.  The choice of marker genes can also be important: Some of the neuron
     marker genes can have a higher expression level in Ependymal cells
