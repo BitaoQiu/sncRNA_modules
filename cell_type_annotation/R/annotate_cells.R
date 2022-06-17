@@ -24,8 +24,9 @@ filter_low_score = function(target_cell_type, es.data, q = 1, G = 3, lable_name 
   return(es.data.filtered)
 }
 
-cell_level_annotation = function(tmp_object, marker_db.list, exp.var = NA, assay = 'SCT', filter.var = F, filter = T, label = 'sctype_label', scaling = F){
-  es.max = sctype_score(scRNAseqData = tmp_object[[assay]]@data, 
+cell_level_annotation = function(tmp_object, marker_db.list, exp.var = NA, assay = 'SCT', data_slot = 'scale.data', filter.var = F, filter = T, label = 'sctype_label', scaling = F){
+  scRNAseqData = GetAssayData(object = tmp_object, assay = assay, slot = data_slot)
+  es.max = sctype_score(scRNAseqData = scRNAseqData, 
                         exp.var = exp.var, filter.var = filter.var, p = .1, 
                         scaling = scaling, gs = marker_db.list, gene_names_to_uppercase = F) 
   es.max.data = data.frame(t(es.max))
@@ -63,13 +64,14 @@ cluster_level_annotation = function(tmp_object, sctype_label = 'sctype_label.fil
   return(tmp_object)
 }
 
-cell_annotation_ref_based = function(seurat_object, marker_db.list,assay = 'SCT', scaling = F, 
+cell_annotation_ref_based = function(seurat_object, marker_db.list,assay = 'SCT', scaling = F, data_slot = 'scale.data', 
                                      filter.var = F, filter = T, label = 'sctype_label') {
   if (filter.var) {
     sampled_cells = unlist(tapply(colnames(seurat_object), INDEX = seurat_object$seurat_clusters, sample, size = 100, replace = T))
     exp.var = apply(seurat_object[[assay]]@data[,sampled_cells],1, var)
   } else {exp.var = NA}
-  seurat_object = cell_level_annotation(seurat_object, marker_db.list, filter.var = filter.var, filter = filter, scaling = scaling, exp.var = exp.var, assay = assay, label = label)
+  seurat_object = cell_level_annotation(seurat_object, marker_db.list, filter.var = filter.var, data_slot = data_slot, 
+                                        filter = filter, scaling = scaling, exp.var = exp.var, assay = assay, label = label)
   seurat_object = cluster_level_annotation(seurat_object, sctype_label = label) # Cluster level annotation
   if (filter) {
     seurat_object = cluster_level_annotation(seurat_object, sctype_label = paste(label, 'filtered',sep = '.'))

@@ -4,24 +4,26 @@ library(doParallel)
 library(mclust)
 
 rank_markers = function(exp_data, cell_anotations, target_cell_type, test_fun = t.test, sample_size = 500, stratified = T) {
-  target_cells = which(cell_anotations == target_cell_type)
+  target_cells = names(cell_anotations[which(cell_anotations %in% target_cell_type)])
   background_cells = cell_anotations[which(cell_anotations != target_cell_type)]
   if (stratified == T) {
     # Use stratified sampling to make sure the background is not dominant by major cell types.
     stratified_background = unlist(tapply(names(background_cells), 
                                           background_cells, sample, size = sample_size, replace = T), use.names = F)
   } else {
-    stratified_background = sample(x = names(background_cells), size = sample_size, replace = T)
+    stratified_background = sample(x = names(background_cells), size = sample_size*length(table(background_cells)), replace = T)
   }
-  target_cells.downsampled = sample(x = target_cells, size = sample_size*2, replace = T)
-  ranking.stat = apply(exp_data, 1, FUN = function(x) {
-    test_fun(x[target_cells], x[stratified_background],alternative = 'g')$statistic})
+  if (length(target_cells) > sample_size*2){
+    target_cells.down = sample(target_cells, size = sample_size*2, replace = T) # Down sampling to increase the speed.
+  } else {target_cells.down = target_cells}
+  
+  ranking.stat = apply(exp_data, 1, FUN = function(x) {test_fun(x[target_cells.down], x[stratified_background],alternative = 'g')$statistic})
   return(ranking.stat)
 }
 
 build_marker_db = function(exp_data, cell_anotations, test_fun = t.test, sample_size = 500, n_core = 10, stratified = T) {
   registerDoParallel(n_core)
-  cell_type_list = names(table(cell_anotations))
+  cell_type_list = names(table(droplevels(cell_anotations)))
   out_db = data.frame(foreach(x = cell_type_list, .combine = cbind) %dopar% {
     rank_markers(exp_data = exp_data, 
                  cell_anotations = cell_anotations,
